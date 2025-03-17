@@ -1,0 +1,42 @@
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+
+> pm2@1.0.0 start
+> node server.js
+
+Server running at http://localhost:8080
+Terminate batch job (Y/N)? 

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit App Manager</title>
+    <script src="https://unpkg.com/ujs"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .save { background: #55c9bf; color: #fff; }
+        .start { background: #28a745; color: #fff; }
+        .stop { background: #dc3545; color: #fff; }
+        .restart { background: #ffc107; color: #fff; }
+        .kill { background: #e10f24; color: #fff; }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #555;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f8f8;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+    <h2>Manage Orbit App</h2>
+    <button class="btn save" onclick="controlApp('save')">Save</button>
+    <button class="btn start" onclick="controlApp('start')">Start</button>
+    <button class="btn stop" onclick="controlApp('stop')">Stop</button>
+    <!-- <button class="btn restart" onclick="controlApp('restart')">Restart</button> -->
+    <button class="btn kill" onclick="controlApp('kill')">Kill</button>
+    <p id="status" class="status">Status: Waiting for action...</p>
+
+
+</div>
+
+<script>
+    function controlApp(action) {
+        fetch(`/control/${action}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("status").innerText = `Status: ${data.message}`;
+            })
+            .catch(error => {
+                document.getElementById("status").innerText = "Error: Unable to complete action.";
+                console.error("Error:", error);
+            });
+    }
+</script>
+
+
+</body>
+</html>
