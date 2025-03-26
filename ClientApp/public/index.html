@@ -3,109 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbit App Manager</title>
-    <script src="https://unpkg.com/ujs"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .container {
-            background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 90%;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .save { background: #55c9bf; color: #fff; }
-        .start { background: #28a745; color: #fff; }
-        .stop { background: #dc3545; color: #fff; }
-        .restart { background: #ffc107; color: #fff; }
-        .kill { background: #e10f24; color: #fff; }
-
-        .btn:hover {
-            opacity: 0.8;
-        }
-
-        .status {
-            margin-top: 20px;
-            font-weight: bold;
-            color: #555;
-            padding: 10px;
-            border-radius: 5px;
-            background: #f9f9f9;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background-color: #f8f8f8;
-        }
-
-    </style>
+    <title>Orbit Server Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
-
     <div class="container">
-    <h2>Manage Orbit App</h2>
-    <button class="btn save" onclick="controlApp('save')">Save</button>
-    <button class="btn start" onclick="controlApp('start')">Start</button>
-    <button class="btn stop" onclick="controlApp('stop')">Stop</button>
-    <!-- <button class="btn restart" onclick="controlApp('restart')">Restart</button> -->
-    <button class="btn kill" onclick="controlApp('kill')">Kill</button>
-    <p id="status" class="status">Status: Waiting for action...</p>
+        <div class="header-row">
+            <h2>Orbit Server Manager</h2>
+            <button class="icon-btn config-btn" onclick="openConfigModal()" title="Configuration">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
 
+        <div class="section-title">Server Actions</div>
+        <div class="button-row">
+            <button class="btn save" onclick="controlApp('save')">Save</button>
+            <button class="btn start" onclick="controlApp('start')">Start</button>
+            <button class="btn stop" onclick="controlApp('stop')">Stop</button>
+            <button class="btn kill" onclick="controlApp('kill')">Kill</button>
+        </div>
 
-</div>
+        <p id="status" class="status">Status: Waiting for action...</p>
+    </div>
 
-<script>
-    function controlApp(action) {
-        fetch(`/control/${action}`)
+    <!-- Configuration Modal -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Server Configuration</h3>
+                <button class="close-btn" onclick="closeConfigModal()">&times;</button>
+            </div>
+            <div class="config-section">
+                <div class="config-row">
+                    <label for="license-input">License:</label>
+                    <input type="text" id="license-input" placeholder="Enter your license...">
+                    <span id="config-status" class="config-status"></span>
+                </div>
+                <div class="config-row">
+                    <label for="gateways">Gateways:</label>
+                    <select id="gateways" class="config-select">
+                        <!-- Options will be loaded dynamically -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn check-config" onclick="checkLicense()">Check License</button>
+                <button class="btn save-gateway" onclick="saveGateway()">Save Gateway</button>
+                <button class="btn close-btn" onclick="closeConfigModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to store the selected gateway
+        let selectedGateway_id = localStorage.getItem('gateway')
+        let selectedGateway = '';
+
+        // Execute when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/get-mac-address')
+                .then(res => res.json())
+                .then(data => console.log("MAC:", data.mac));
+
+            // check the license on startup
+            checkLicense();
+        });
+
+        function loadGateways(gateways) {
+            const select = document.getElementById('gateways');
+            select.innerHTML = '';
+
+            if (gateways.length === 0) {
+                select.innerHTML = '';
+                const errorOption = document.createElement('option');
+                errorOption.value = '';
+                errorOption.textContent = 'No gateways found';
+                select.appendChild(errorOption);
+                return;
+            }
+
+            // Add a default empty option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '-- Select a gateway --';
+            select.appendChild(defaultOption);
+
+            // Add options from database
+            gateways.forEach(gateway => {
+                const option = document.createElement('option');
+                option.value = gateway._id;
+                option.textContent = gateway.gateway_id;
+                option.dataset.gateway = JSON.stringify(gateway);
+                select.appendChild(option);
+            });
+
+            // Add event listener for selection change
+            select.addEventListener('change', function() {
+                if (this.value) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    selectedGateway_id = selectedOption.value;
+                    selectedGateway = selectedOption.textContent;
+                    // console.log('Selected Gateway:', selectedGateway);
+                } else {
+                    selectedGateway = '';
+                }
+            });
+        }
+
+        function saveGateway() {
+            if (!selectedGateway) {
+                alert('Please select a gateway first');
+                return;
+            }
+            fetch('/save-gateway', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    gateway: selectedGateway,
+                })
+            })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("status").innerText = `Status: ${data.message}`;
+                console.log(data);
+                // save to local storage
+                localStorage.setItem('gateway', selectedGateway_id);
+                // alert(`Gateway saved successfully: ${data.gateway}`);
+                document.getElementById("status").innerText = `Status: Gateway ${data.gateway} saved`;
+                closeConfigModal()
             })
             .catch(error => {
-                document.getElementById("status").innerText = "Error: Unable to complete action.";
-                console.error("Error:", error);
+                console.error('Error saving gateway:', error);
+                // alert('Error saving gateway');
+                document.getElementById("status").innerText = "Error: Unable to save gateway";
             });
-    }
-</script>
+        }
 
+        function checkLicense() {
+            const input = document.getElementById('license-input');
+            const configStatus = document.getElementById('config-status');
+            const select = document.getElementById('gateways');
+            const license = input.value || localStorage.getItem('license') || '';
 
+            fetch(`/fetch-gateways/${license}`)
+                .then(response => response.json())
+                .then(({success, data}) => {
+                    if (!success) {
+                        configStatus.textContent = '';
+                        configStatus.className = 'config-status config-error';
+                        loadGateways([]);
+                        return;
+                    }
+                    localStorage.setItem('license', license);
+                    if (data.isActive) {
+                        input.value = license;
+                        configStatus.textContent = '';
+                        configStatus.className = 'config-status config-ok';
+                        loadGateways(data.gateways);
+                        select.value = selectedGateway_id;
+                    } else {
+                        configStatus.textContent = '';
+                        configStatus.className = 'config-status config-error';
+                    }
+                });
+        }
+
+        function openConfigModal() {
+            document.getElementById('configModal').style.display = 'flex';
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').style.display = 'none';
+        }
+
+        function controlApp(action) {
+            fetch(`/control/${action}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("status").innerText = `Status: ${data.message}`;
+                })
+                .catch(error => {
+                    document.getElementById("status").innerText = "Error: Unable to complete action.";
+                    console.error("Error:", error);
+                });
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('configModal');
+            if (event.target == modal) {
+                closeConfigModal();
+            }
+        }
+    </script>
 </body>
 </html>

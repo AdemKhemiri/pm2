@@ -1,0 +1,207 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+}
+
+.header-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #6c757d;
+    transition: 0.3s;
+    padding: 5px;
+}
+
+.icon-btn:hover {
+    color: #495057;
+    transform: rotate(30deg);
+}
+
+.section-title {
+    color: #444;
+    font-size: 1em;
+    margin: 20px 0 10px 0;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 0px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.save { background: #55c9bf; color: #fff; }
+.start { background: #28a745; color: #fff; }
+.stop { background: #dc3545; color: #fff; }
+.kill { background: #e10f24; color: #fff; }
+
+.check-config { background: #007bff; color: #fff; }
+.save-gateway {
+    background: #6f42c1;
+    color: #fff;
+}
+.btn:hover {
+    opacity: 0.8;
+}
+
+.button-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.status {
+    font-weight: bold;
+    color: #555;
+    padding: 10px;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.modal-title {
+    font-size: 1.5em;
+    color: #333;
+    margin: 0;
+}
+
+.close-btn{
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #777;
+}
+
+.config-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.config-row label {
+    width: 100px;
+    text-align: right;
+    color: #555;
+}
+
+.config-row input[type="text"] {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.config-status {
+    padding: 15px;
+    border-radius: 5px;
+    color: #fff;
+    background: #6c757d;
+    min-width: 10px;
+    text-align: center;
+}
+
+.config-ok { background: #28a745; }
+.config-error { background: #dc3545; }
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+    margin-top: 20px;
+}
+
+.modal-footer .btn {
+    padding: 10px;
+    font-size: 14px;
+    margin: 0px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.modal-footer .close-btn{
+    border: 1px solid #dc3545 !important;
+}
+.config-section {
+    margin-bottom: 20px;
+}
+
+.config-select {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.config-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}

@@ -98,27 +98,7 @@ SectionEnd
 Section "Create PM2 Resurrect Script"
   ; Set output path to installation directory
   SetOutPath "$INSTDIR"
-
-  ; Create the batch file
-  FileOpen $0 "$INSTDIR\pm2_resurrect.bat" w
-  FileWrite $0 "@echo off$\r$\n"
-  FileWrite $0 "set HOMEDRIVE=C:$\r$\n"
-  ; Set PM2_HOME dynamically to the user's .pm2 directory
-  FileWrite $0 "set PM2_HOME=$PROFILE\.pm2$\r$\n$\r$\n"
-  
-  ; Add PM2 to PATH dynamically
-  ; FileWrite $0 "set path=$APPDATA\npm;%%path%%$\r$\n$\r$\n"
-  
-  ; Add optional PM2 kill with comments
-  FileWrite $0 "@REM Uncomment below to kill existing PM2 processes first$\r$\n"
-  FileWrite $0 "@REM pm2 kill$\r$\n"
-  FileWrite $0 "@REM timeout /t 5 /nobreak > NUL$\r$\n$\r$\n"
-  
-  ; Main resurrect command
-  FileWrite $0 "pm2 resurrect$\r$\n$\r$\n"
-  FileWrite $0 "echo Done$\r$\n"
-  ; FileWrite $0 "pause$\r$\n"
-  FileClose $0
+  File "resurrect_pm2.bat"
 
 SectionEnd
 
@@ -137,7 +117,7 @@ Section "Configuring Services"
   nsExec::ExecToLog `"$BASE_DIR\nssm.exe" set $SERVICE_NAME AppStdout "$INSTDIR\ClientApp\log.txt"`
   nsExec::ExecToLog `"$BASE_DIR\nssm.exe" set $SERVICE_NAME AppStderr "$INSTDIR\ClientApp\error.txt"`
   nsExec::ExecToLog `"$BASE_DIR\nssm.exe" start $SERVICE_NAME`
-  
+
   Sleep 3000 ; 3-second delay
 
   ; Create the PM2 service using NSSM
