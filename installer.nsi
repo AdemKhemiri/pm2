@@ -91,8 +91,10 @@ Section "Add npm to System PATH"
 
   ; Add RestartOrbit utility
   SetOutPath "$BASE_DIR"
-  File "RestartOrbit.exe"
-  File "StopOrbit.exe"
+  File "dist\RemovePM2.exe"
+  File "dist\RemoveWebService.exe"
+  File "dist\StartWebService.exe"
+  File "dist\StartPM2Service.exe"
 SectionEnd
 
 Section "Create PM2 Resurrect Script"
@@ -110,7 +112,7 @@ Section "Configuring Services"
   DetailPrint "Installing NSSM and configuring the service..."
   SetOutPath "$BASE_DIR"
   File "nssm.exe" ; Ensure nssm.exe is included in your NSIS script directory
-
+  File "start_pm2.bat"
   ; Create the service using NSSM
   nsExec::ExecToLog `"$BASE_DIR\nssm.exe" install $SERVICE_NAME "$NODEJS_PATH\npm.cmd" "start"`
   nsExec::ExecToLog `"$BASE_DIR\nssm.exe" set $SERVICE_NAME AppDirectory "$INSTDIR\ClientApp"`
@@ -121,9 +123,13 @@ Section "Configuring Services"
   Sleep 3000 ; 3-second delay
 
   ; Create the PM2 service using NSSM
-  nsExec::ExecToLog `"$BASE_DIR\nssm.exe" install $PM2_SERVICE_NAME "$INSTDIR\pm2_resurrect.bat"`
+  nsExec::ExecToLog `"$BASE_DIR\nssm.exe" install $PM2_SERVICE_NAME "$INSTDIR\start_pm2.bat"`
   nsExec::ExecToLog `"$BASE_DIR\nssm.exe" set $PM2_SERVICE_NAME AppDirectory "$INSTDIR"`
-
+  nsExec::ExecToLog `"$EXEDIR\nssm.exe" set $PM2_SERVICE_NAME AppStdout "$INSTDIR\PM2-log.txt"`
+  nsExec::ExecToLog `"$EXEDIR\nssm.exe" set $PM2_SERVICE_NAME AppStderr "$INSTDIR\PM2-error.txt"`
+  ; Prevent NSSM to restart
+  nsExec::ExecToLog `"$EXEDIR\nssm.exe" set $PM2_SERVICE_NAME AppExit Default Exit`
+  nsExec::ExecToLog `"$EXEDIR\nssm.exe" set $PM2_SERVICE_NAME AppRestartDelay 0`
   nsExec::ExecToLog `"$BASE_DIR\nssm.exe" start $PM2_SERVICE_NAME`
 
 ;   ${If} $0 != 0
@@ -145,7 +151,7 @@ SectionEnd
 Section "Uninstall"
   ; Stop and remove the service
   DetailPrint "Stopping and removing the service..."
-  nsExec::ExecToLog `"$INSTDIR\nssm.exe" stop $SERVICE_NAME`
+;   nsExec::ExecToLog `"$INSTDIR\nssm.exe" stop $SERVICE_NAME`
   Sleep 3000 ; 3-second delay
   nsExec::ExecToLog `"$INSTDIR\nssm.exe" remove $SERVICE_NAME confirm`
 

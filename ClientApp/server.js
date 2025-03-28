@@ -6,7 +6,9 @@ const port = 8080;
 
 app.use(express.json());
 app.use(express.static("public"));
-const filePath = "D:/Work/Orbit/pm2/ClientApp/app.js"
+// const filePath = "D:/Work/Orbit/pm2/ClientApp/app.js"
+const filePath = "C:/Program Files (x86)/Orbit/ClientApp/app.js"
+
 let isActive = false
 
 app.get('/get-mac-address', (req, res) => {
@@ -59,40 +61,39 @@ app.get("/fetch-gateways/:license", (req, res) => {
 
 })
 app.get("/control/:action", (req, res) => {
-    if (!isActive) {
-        return res.json({ success: false, message: `Gateway is not valid` });
-    }
     const action = req.params.action;
-    if (action === 'kill') {
-        exec(`pm2 ${action}`, (error, stdout, stderr) => {
-            if (error) {
-                return res.json({ success: false, message: `Failed to ${action} the app`, error: stderr });
-            }
+    let command;
 
-           return res.json({ success: true, message: `App has successfully ${action}ed` });
-        });
-    } else if (action === 'save') {
-        exec(`pm2 save --force`, (error, stdout, stderr) => {
-            if (error) {
-                return res.json({ success: false, message: `Failed to ${action} the app`, error: stderr });
-            }
-           return res.json({ success: true, message: `App has successfully ${action}d` });
-        });
-    } else if (action === 'stop' || action === 'restart') {
-        exec(`pm2 ${action} all`, (error, stdout, stderr) => {
-            if (error) {
-                return res.json({ success: false, message: `Failed to ${action} the app`, error: stderr });
-            }
-           return res.json({ success: true, message: `App has successfully ${action}ed` });
-        });
-    } else {
-        exec(`pm2 ${action} ${filePath}`, (error, stdout, stderr) => {
-            if (error) {
-                return res.json({ success: false, message: `Failed to ${action} the app`, error: stderr });
-            }
-            return res.json({ success: true, message: `App has successfully ${action}ed` });
-        });
+    switch(action) {
+        case 'kill':
+            command = `pm2 ${action}`;
+            break;
+        case 'save':
+            command = 'pm2 save --force';
+            break;
+        case 'stop':
+        case 'restart':
+            command = `pm2 ${action} all`;
+            break;
+        default:
+            command = `pm2 ${action} "${filePath}"`;
     }
+
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing ${command}:`, stderr);
+            return res.status(500).json({
+                success: false,
+                message: `Failed to ${action} the app`,
+                error: stderr
+            });
+        }
+        console.log(`Successfully executed ${command}:`, stdout);
+        res.json({
+            success: true,
+            message: `App has successfully ${action}ed`
+        });
+    });
 });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));

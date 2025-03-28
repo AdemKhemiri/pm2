@@ -1,12 +1,15 @@
 @echo off
 
+:: Configure Environment
 SET PM2_HOME=%USERPROFILE%\.pm2
-SET HOMEPATH=%USERPROFILE%
+SET PATH=%PATH%;C:\Windows\System32;C:\Program Files\nodejs;%APPDATA%\npm
 
-cd "C:\Program Files (x86)\Orbit\ClientApp"
-pm2 start ".\app.js" -f
+:: Kill Existing Processes
+taskkill /f /im node.exe >nul 2>&1
+timeout 2 >nul
 
-sleep 1000
+:: Start Application
+cd /d "C:\Program Files (x86)\Orbit\ClientApp\"
 
-pm2 save -f
-pause
+:: Launch with PM2 and proper exit handling
+pm2 start app.js
