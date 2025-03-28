@@ -9,7 +9,7 @@ taskkill /f /im node.exe >nul 2>&1
 timeout 2 >nul
 
 :: Start Application
-cd /d "C:\Program Files (x86)\Orbit\ClientApp\"
+cd /d "C:\Ems"
 
 :: Launch with PM2 and proper exit handling
-pm2 start app.js
+pm2 start data-reading.js
