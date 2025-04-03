@@ -1,19 +1,23 @@
 const express = require("express");
 const { exec } = require("child_process");
+const getMachineUUID = require("./utils/uuid");
 const app = express();
 const port = 8080;
 
 
 app.use(express.json());
 app.use(express.static("public"));
-// const filePath = "D:/Work/Orbit/pm2/ClientApp/app.js"
-const filePath = "C:/Program Files (x86)/Orbit/ClientApp/app.js"
+const filePath = "D:/Work/Orbit/pm2/ClientApp/app.js"
+// const filePath = "C:/Program Files (x86)/Orbit/ClientApp/app.js"
 
 let isActive = false
 
-app.get('/get-mac-address', (req, res) => {
-    const interface = require('os').version()
-    return res.json({ mac: interface });
+app.get('/get-UUID', (req, res) => {
+
+    const machineId = getMachineUUID();
+    if (machineId) {
+        return res.status(200).json({ uuid: machineId });
+    }
 
     const interfaces = require('os').networkInterfaces().WiFi;
     interfaces?.forEach(interface => {
@@ -38,11 +42,15 @@ app.post('/save-gateway', async (req, res) => {
         });
     }
 });
-app.get("/fetch-gateways/:license", (req, res) => {
+app.get("/fetch-gateways/:license", async(req, res) => {
     const { license } = req.params
     // ** This section should send a request to mongodb to check if the gateaway is active
     try {
-        fetch(`http://localhost:7000/license/${license}`)
+        const uuid = getMachineUUID()
+        if (!license) {
+            return res.status(400).json({ error: "License key is required" });
+        }
+        await fetch(`http://localhost:7000/license/${license}/${uuid}`)
             .then(res => res.json())
             .then(data => {
                 isActive = data.data.isActive
@@ -52,13 +60,6 @@ app.get("/fetch-gateways/:license", (req, res) => {
         isActive = false
         return res.json({ isActive, gateways: [] });
     }
-    // if (gateway === "test1") {
-    //     process.env.GATEWAY = gateway; // sending the gateway to the client app
-    //     isActive = true
-    // } else {
-    //     isActive = false
-    // }
-
 })
 app.get("/control/:action", (req, res) => {
     const action = req.params.action;

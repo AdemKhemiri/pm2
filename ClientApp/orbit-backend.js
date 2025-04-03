@@ -15,24 +15,33 @@ const GatewayModel = mongoose.model('gateways', GatewaySchema);
 
 // Server Type Schema
 const LicenseSchema = new mongoose.Schema({
-    license: String,
+    key: String,
     date_debut: Date,
     date_fin: Date,
     gateways: [{type: mongoose.Schema.Types.ObjectId, ref: 'GatewayModel'}],
+    uuid: String,
     users: [String],
-    isActive: Boolean
-});
+    isActive: Boolean,
+},{ timestamps: true });
 const LicenseModel = mongoose.model('licenses', LicenseSchema);
 
 // API Endpoints
-app.get('/license/:license', async (req, res) => {
+app.get('/license/:license/:uuid', async (req, res) => {
     try {
-        const { license } =  req.params
+        const { license, uuid } =  req.params
+        // console.log(license, uuid);
 
-        const data = await LicenseModel.findOne({ license }).populate({
+        const data = await LicenseModel.findOne({ key: license }).populate({
             path: 'gateways',
             model: 'gateways',
         });
+        if(!data.uuid) {
+            data.uuid = uuid;
+            await data.save();
+        }
+        if (data.uuid !== uuid) {
+           return res.status(401).json({success: false, data: {}, message: "Invalid License" });
+        }
         const response = {
             gateways: data.gateways,
             isActive: data.isActive

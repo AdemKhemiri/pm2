@@ -11,9 +11,9 @@
     <div class="container">
         <div class="header-row">
             <h2>Orbit Server Manager</h2>
-            <!-- <button class="icon-btn config-btn" onclick="openConfigModal()" title="Configuration">
+            <button class="icon-btn config-btn" onclick="openConfigModal()" title="Configuration">
                 <i class="fas fa-cog"></i>
-            </button> -->
+            </button>
         </div>
 
         <div class="section-title">Server Actions</div>
@@ -62,9 +62,9 @@
 
         // Execute when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('/get-mac-address')
+            fetch('/get-UUID')
                 .then(res => res.json())
-                .then(data => console.log("MAC:", data.mac));
+                .then(data => console.log("UUID:", data.uuid));
 
             // check the license on startup
             checkLicense();
@@ -149,10 +149,14 @@
 
             fetch(`/fetch-gateways/${license}`)
                 .then(response => response.json())
-                .then(({success, data}) => {
+                .then(({success, data, message}) => {
                     if (!success) {
                         configStatus.textContent = '';
                         configStatus.className = 'config-status config-error';
+                        console.log(message);
+
+                        document.getElementById("status").innerText = `Status: ${message}`;
+
                         loadGateways([]);
                         return;
                     }
