@@ -48,6 +48,7 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <button class="btn check-config" onclick="saveUserInfo()">Save User Info</button>
                 <button class="btn check-config" onclick="checkLicense()">Check License</button>
                 <button class="btn save-gateway" onclick="saveGateway()">Save Gateway</button>
                 <button class="btn close-btn" onclick="closeConfigModal()">Close</button>
@@ -62,9 +63,6 @@
 
         // Execute when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('/get-UUID')
-                .then(res => res.json())
-                .then(data => console.log("UUID:", data.uuid));
 
             // check the license on startup
             checkLicense();
@@ -92,6 +90,7 @@
             // Add options from database
             gateways.forEach(gateway => {
                 const option = document.createElement('option');
+
                 option.value = gateway._id;
                 option.textContent = gateway.gateway_id;
                 option.dataset.gateway = JSON.stringify(gateway);
@@ -104,7 +103,6 @@
                     const selectedOption = this.options[this.selectedIndex];
                     selectedGateway_id = selectedOption.value;
                     selectedGateway = selectedOption.textContent;
-                    // console.log('Selected Gateway:', selectedGateway);
                 } else {
                     selectedGateway = '';
                 }
@@ -127,7 +125,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log(data);
                 // save to local storage
                 localStorage.setItem('gateway', selectedGateway_id);
                 // alert(`Gateway saved successfully: ${data.gateway}`);
@@ -153,7 +150,7 @@
                     if (!success) {
                         configStatus.textContent = '';
                         configStatus.className = 'config-status config-error';
-                        console.log(message);
+                        console.error(message);
 
                         document.getElementById("status").innerText = `Status: ${message}`;
 
@@ -194,6 +191,13 @@
                 });
         }
 
+        function saveUserInfo() {
+            const input = document.getElementById('license-input');
+            const license = input.value || localStorage.getItem('license') || '';
+             fetch(`/save-user-info/${license}/${selectedGateway_id}`)
+                .then(res => res.json())
+                .then(data => console.log("UUID:", data));
+        }
         // Close modal when clicking outside of it
         window.onclick = function(event) {
             const modal = document.getElementById('configModal');

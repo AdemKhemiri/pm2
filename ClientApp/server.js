@@ -1,6 +1,9 @@
 const express = require("express");
 const { exec } = require("child_process");
+const os = require("os")
 const getMachineUUID = require("./utils/uuid");
+const trackLicenseLocation = require("./utils/location");
+const getUserInfo = require("./utils/userInfo");
 const app = express();
 const port = 8080;
 
@@ -12,19 +15,33 @@ const filePath = "D:/Work/Orbit/pm2/ClientApp/app.js"
 
 let isActive = false
 
-app.get('/get-UUID', (req, res) => {
 
-    const machineId = getMachineUUID();
-    if (machineId) {
-        return res.status(200).json({ uuid: machineId });
+app.get('/save-user-info/:license/:gateway', async(req, res) => {
+    const { license, gateway } = req.params
+    const machineUUID = getMachineUUID();
+    const userInfo = getUserInfo();
+    const location = await trackLicenseLocation()
+
+    const object = {
+        licenseKey: license,
+        gateway: gateway,
+        uuid: machineUUID,
+        ...userInfo,
+        ...location
     }
-
-    const interfaces = require('os').networkInterfaces().WiFi;
-    interfaces?.forEach(interface => {
-        if (interface.family === 'IPv4') {
-           return res.json({ mac: interface.mac });
-        }
+    if (!license || !machineUUID || !userInfo || !location) {
+        return res.status(400).json({ error: "Something went wrong" });
+    }
+    fetch('http://localhost:7000/save-user-info', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(object)
+    }).then(res => res.json()).then(data => {
+        return res.json(data);
     });
+
 });
 app.post('/save-gateway', async (req, res) => {
     try {
@@ -44,6 +61,7 @@ app.post('/save-gateway', async (req, res) => {
 });
 app.get("/fetch-gateways/:license", async(req, res) => {
     const { license } = req.params
+
     // ** This section should send a request to mongodb to check if the gateaway is active
     try {
         const uuid = getMachineUUID()
@@ -53,6 +71,8 @@ app.get("/fetch-gateways/:license", async(req, res) => {
         await fetch(`http://localhost:7000/license/${license}/${uuid}`)
             .then(res => res.json())
             .then(data => {
+                // console.log(data);
+
                 isActive = data.data.isActive
                 return res.json(data);
             });

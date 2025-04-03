@@ -26,4 +26,4 @@ function getMachineUUID() {
 
 
 // Export the function
-module.exports = getMachineUUID;
+module.exports = getMachineUUID
