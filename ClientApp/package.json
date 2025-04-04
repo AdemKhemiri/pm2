@@ -11,10 +11,12 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "bytenode": "^1.5.7",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "mongoose": "^8.13.0",
-        "nodemon": "^3.1.9"
+        "nodemon": "^3.1.9",
+        "pm2": "^6.0.5"
     },
     "devDependencies": {
         "@vercel/ncc": "^0.38.3"

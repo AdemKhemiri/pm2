@@ -35,18 +35,12 @@ const PeriodSchema = new mongoose.Schema({
 const LicensePeriodModel = mongoose.model('LicensePeriod', PeriodSchema);
 
 const LicenseUserInfoSchema = new mongoose.Schema({
-//   licenseKey: {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: 'LicenseModel',
-//     required: true
-//   },
   globalIP: {
     type: String,
   },
   country: String,
   city: String,
   coordinates: {
-    // Simple storage without geospatial indexing
     lat: Number,
     lon: Number
   },

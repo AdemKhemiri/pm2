@@ -1,12 +1,14 @@
 const express = require("express");
 const { exec } = require("child_process");
 const os = require("os")
+const pm2 = require('pm2');
+
 const getMachineUUID = require("./utils/uuid");
 const trackLicenseLocation = require("./utils/location");
 const getUserInfo = require("./utils/userInfo");
+
 const app = express();
 const port = 8080;
-
 
 app.use(express.json());
 app.use(express.static("public"));
@@ -82,39 +84,115 @@ app.get("/fetch-gateways/:license", async(req, res) => {
     }
 })
 app.get("/control/:action", (req, res) => {
-    const action = req.params.action;
-    let command;
+  const action = req.params.action;
 
-    switch(action) {
-        case 'kill':
-            command = `pm2 ${action}`;
-            break;
-        case 'save':
-            command = 'pm2 save --force';
-            break;
-        case 'stop':
-        case 'restart':
-            command = `pm2 ${action} all`;
-            break;
-        default:
-            command = `pm2 ${action} "${filePath}"`;
+  pm2.connect((err) => {
+    if (err) {
+      console.error('PM2 connection error:', err);
+      return res.status(500).json({ error: 'Failed to connect to PM2' });
+    }
+    const handlePM2Action = (err) => {
+    //   pm2.disconnect();
+
+      if (err) {
+        console.error(`PM2 ${action} error:`, err);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to ${action}`,
+          error: err.message
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `The App has successfully ${action}ed`
+      });
+    };
+
+    switch (action) {
+      case 'kill':
+        pm2.killDaemon(handlePM2Action);
+        break;
+      case 'restart':
+        pm2.restart('all', handlePM2Action);
+        break;
+      case 'stop':
+        pm2.stop('all', handlePM2Action);
+        break;
+      case 'save':
+        pm2.dump(handlePM2Action);
+        break;
+      default:
+        pm2.start(filePath, handlePM2Action);
+    }
+  });
+});
+
+
+//Endpoint to fetch PM2 process statuses
+app.get('/pm2/status', (req, res) => {
+  pm2.connect((err) => {
+    if (err) {
+    //   console.error('PM2 connection error:', err);
+      return res.status(500).json({ error: 'Failed to connect to PM2' });
     }
 
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing ${command}:`, stderr);
-            return res.status(500).json({
-                success: false,
-                message: `Failed to ${action} the app`,
-                error: stderr
-            });
-        }
-        console.log(`Successfully executed ${command}:`, stdout);
-        res.json({
-            success: true,
-            message: `App has successfully ${action}ed`
-        });
+    pm2.list((err, processes) => {
+    //   pm2.disconnect(); // Always disconnect after use
+
+      if (err) {
+        console.error('PM2 list error:', err);
+        return res.status(500).json({ error: 'Failed to fetch PM2 processes' });
+      }
+
+      // Extract relevant process data
+      const simplified = processes.map(proc => ({
+        id: proc.pm_id,
+        name: proc.name,
+        status: proc.pm2_env.status,
+        cpu: proc.monit.cpu,
+        memory: proc.monit.memory,
+      }));
+
+      res.json({ processes: simplified });
     });
+  });
 });
+
+// app.get("/control/:action", (req, res) => {
+//     const action = req.params.action;
+//     let command;
+
+//     switch(action) {
+//         case 'kill':
+//             command = `pm2 ${action}`;
+//             break;
+//         case 'save':
+//             command = 'pm2 save --force';
+//             break;
+//         case 'stop':
+//         case 'restart':
+//             command = `pm2 ${action} all`;
+//             break;
+//         default:
+//             command = `pm2 ${action} "${filePath}"`;
+//     }
+
+//     exec(command, (error, stdout, stderr) => {
+//         if (error) {
+//             console.error(`Error executing ${command}:`, stderr);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: `Failed to ${action} the app`,
+//                 error: stderr
+//             });
+//         }
+//         console.log(`Successfully executed ${command}:`, stdout);
+//         res.json({
+//             success: true,
+//             message: `App has successfully ${action}ed`
+//         });
+//     });
+// });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));

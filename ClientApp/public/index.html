@@ -15,7 +15,19 @@
                 <i class="fas fa-cog"></i>
             </button>
         </div>
-
+        <!-- Add this below the header-row and above the Server Actions -->
+        <div class="section-title">Server Status</div>
+        <div class="status-container">
+            <div class="status-card">
+                <div class="status-icon" id="status-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="status-info">
+                    <div class="status-name" id="status-name">Loading...</div>
+                    <div class="status-details" id="status-details">Fetching PM2 status...</div>
+                </div>
+            </div>
+        </div>
         <div class="section-title">Server Actions</div>
         <div class="button-row">
             <button class="btn save" onclick="controlApp('save')">Save</button>
@@ -63,7 +75,9 @@
 
         // Execute when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', function() {
-
+            // Call fetchPm2Status() on page load and after actions
+            fetchPm2Status();
+            setInterval(fetchPm2Status, 5000); // Refresh every 5 seconds
             // check the license on startup
             checkLicense();
         });
@@ -198,6 +212,71 @@
                 .then(res => res.json())
                 .then(data => console.log("UUID:", data));
         }
+
+        // Add this function to fetch PM2 status
+        function fetchPm2Status() {
+            fetch('/pm2/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.processes && data.processes.length > 0) {
+                        const process = data.processes[0]; // Assuming one main process
+                        updateStatusUI(process.status, process.name, process.cpu, process.memory);
+                    } else {
+                        updateStatusUI('unknown', 'No PM2 processes found', 0, 0);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching PM2 status:', error);
+                    updateStatusUI('error', 'Failed to fetch status', 0, 0);
+                });
+        }
+
+        // Helper function to update the UI
+        function updateStatusUI(status, name, cpu, memory) {
+            const icon = document.getElementById('status-icon');
+            const nameEl = document.getElementById('status-name');
+            const detailsEl = document.getElementById('status-details');
+
+            // Set icon and color based on status
+            let iconClass, statusText;
+            switch (status) {
+                case 'online':
+                    iconClass = 'fa-check-circle';
+                    statusText = 'Online';
+                    break;
+                case 'stopped':
+                    iconClass = 'fa-times-circle';
+                    statusText = 'Stopped';
+                    break;
+                case 'errored':
+                    iconClass = 'fa-times-circle';
+                    statusText = 'Crashed';
+                    break;
+                default:
+                    iconClass = 'fa-question-circle';
+                    statusText = 'Unknown';
+            }
+
+            icon.innerHTML = `<i class="fas ${iconClass}"></i>`;
+            nameEl.textContent = `${name} (${statusText})`; // you can change the app name showing next to the status
+            detailsEl.textContent = `CPU: ${cpu}% | Memory: ${Math.round(memory / 1024 / 1024)} MB`;
+        }
+
+
+        // Update status after control actions
+        function controlApp(action) {
+            fetch(`/control/${action}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("status").innerText = `Status: ${data.message}`;
+                    fetchPm2Status(); // Refresh status after action
+                })
+                .catch(error => {
+                    document.getElementById("status").innerText = "Error: Unable to complete action.";
+                    console.error("Error:", error);
+                });
+        }
+
         // Close modal when clicking outside of it
         window.onclick = function(event) {
             const modal = document.getElementById('configModal');
