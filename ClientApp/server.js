@@ -1,6 +1,7 @@
 const express = require("express");
 const { exec } = require("child_process");
 const os = require("os")
+const fs = require('fs');
 const pm2 = require('pm2');
 
 const getMachineUUID = require("./utils/uuid");
@@ -8,7 +9,7 @@ const trackLicenseLocation = require("./utils/location");
 const getUserInfo = require("./utils/userInfo");
 
 const app = express();
-const port = 8080;
+const port = 6300;
 
 app.use(express.json());
 app.use(express.static("public"));
@@ -48,8 +49,17 @@ app.get('/save-user-info/:license/:gateway', async(req, res) => {
 app.post('/save-gateway', async (req, res) => {
     try {
         const { gateway } = req.body;
-
-        process.env.GATEWAY = gateway;
+        if (!gateway) {
+            return res.status(400).json({
+                success: false,
+                message: "Gateway is required"
+            });
+        }
+        // process.env.GATEWAY = gateway;
+        const data = {
+            gateway: gateway
+        };
+        fs.writeFileSync('gateway.json', JSON.stringify(data, null, 2));
         res.json({
             success: true,
             gateway: gateway
