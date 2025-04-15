@@ -28,9 +28,9 @@ function loadGateways(gateways) {
 
     gateways.forEach(gateway => {
         const option = document.createElement('option');
-        option.value = gateway._id;
-        option.textContent = gateway.gateway_id;
-        option.dataset.gateway = JSON.stringify(gateway);
+        option.value = gateway;
+        option.textContent = gateway;
+        // option.dataset.gateway = JSON.stringify(gateway);
         select.appendChild(option);
     });
 

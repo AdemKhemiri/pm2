@@ -1,0 +1,23 @@
+{
+  "createdAt": "2025-04-10T11:10:49.167Z",
+  "files": [
+    {
+      "name": "location.jsc",
+      "path": "utils\\location.jsc",
+      "size": 3032,
+      "modified": "2025-04-10T09:40:20.847Z"
+    },
+    {
+      "name": "userInfo.jsc",
+      "path": "utils\\userInfo.jsc",
+      "size": 1080,
+      "modified": "2025-04-10T09:40:20.849Z"
+    },
+    {
+      "name": "uuid.jsc",
+      "path": "utils\\uuid.jsc",
+      "size": 1600,
+      "modified": "2025-04-10T09:40:20.849Z"
+    }
+  ]
+}

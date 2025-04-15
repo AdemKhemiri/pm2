@@ -9,14 +9,16 @@ const trackLicenseLocation = require("./utils/location");
 const getUserInfo = require("./utils/userInfo");
 
 const app = express();
-const port = 6300;
 
 app.use(express.json());
-app.use(express.static("public"));
-const filePath = "D:/Work/Orbit/pm2/ClientApp/app.js"
-// const filePath = "C:/Program Files (x86)/Orbit/ClientApp/app.js"
 
+// app.use(express.static("protected-public"));
+app.use(express.static("public"));
+
+const filePath = "data-reading.js"
+// const filePath = "C:/Program Files (x86)/Orbit/ClientApp/app.js"
 let isActive = false
+const port = 6300;
 
 
 app.get('/save-user-info/:license/:gateway', async(req, res) => {
@@ -77,18 +79,22 @@ app.get("/fetch-gateways/:license", async(req, res) => {
     // ** This section should send a request to mongodb to check if the gateaway is active
     try {
         const uuid = getMachineUUID()
-        if (!license) {
+
+        if (!license || !uuid) {
             return res.status(400).json({ error: "License key is required" });
         }
+        console.log(license, uuid);
         await fetch(`http://localhost:7000/license/${license}/${uuid}`)
             .then(res => res.json())
             .then(data => {
-                // console.log(data);
+                console.log(data);
 
                 isActive = data.data.isActive
                 return res.json(data);
             });
     } catch (error) {
+        console.log(error);
+
         isActive = false
         return res.json({ isActive, gateways: [] });
     }
@@ -206,3 +212,6 @@ app.get('/pm2/status', (req, res) => {
 // });
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+
+// ** Block external access to port 8080 while allowing local connections:
+// New-NetFirewallRule -DisplayName "Block 8080" -Direction Inbound -LocalPort 8080 -Action Block

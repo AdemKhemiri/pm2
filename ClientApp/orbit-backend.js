@@ -8,28 +8,18 @@ app.use(express.json());
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URL);
 
-const GatewaySchema = new mongoose.Schema({
-    gateway_id: String,
-});
-const GatewayModel = mongoose.model('gateways', GatewaySchema);
-
 const PeriodSchema = new mongoose.Schema({
-    licenseKey: {
+    license: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LicenseModel',
         required: true
     },
-    date_debut: {
-        type: Date,
-        default: Date.now
-    },
-    date_fin: {
-        type: Date
-    },
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true },
     status: {
         type: String,
         enum: ['active', 'expired', 'upcoming', 'canceled'],
-        default: 'upcoming'
+        default: 'active'
     },
 });
 const LicensePeriodModel = mongoose.model('LicensePeriod', PeriodSchema);
@@ -53,15 +43,15 @@ const LicenseUserInfoModel = mongoose.model('LicenseUserInfo', LicenseUserInfoSc
 
 // License Schema
 const LicenseSchema = new mongoose.Schema({
-    licenseKey: String,
-    currentPeriod: { type: mongoose.Schema.Types.ObjectId, ref: 'LicensePeriodModel' },
+    licenseKey: { type: String, required: true, unique: true },
+    currentPeriod: { type: mongoose.Schema.Types.ObjectId, ref: 'LicensePeriod' },
     gateways: [{
-        gateway: {type: mongoose.Schema.Types.ObjectId, ref: 'GatewayModel'},
-        userInfo: { type: mongoose.Schema.Types.ObjectId, ref: 'LicenseUserInfoModel' }
+        gateway: String,
+        userInfo: { type: mongoose.Schema.Types.ObjectId, ref: 'LicenseUserInfoModel' },
+        super_user_id: String
     }],
-    // userInfo: { type: mongoose.Schema.Types.ObjectId, ref: 'LicenseUserInfoModel' },
     users: [String],
-    isActive: Boolean,
+    isActive: { type: Boolean, default: true },
     maxGateways: { type: Number, default: 1 }
 },{ timestamps: true });
 const LicenseModel = mongoose.model('licenses', LicenseSchema);
@@ -89,7 +79,7 @@ app.post('/save-user-info', async (req, res) => {
 
         // Check if gateway exists in this license
         const gatewayIndex = license.gateways.findIndex(
-            g => g.gateway.toString() === gateway
+            g => g.gateway === gateway
         );
 
         if (gatewayIndex === -1) {
@@ -128,18 +118,18 @@ app.post('/save-user-info', async (req, res) => {
 
 
 app.get('/license/:license/:uuid', async (req, res) => {
+
     try {
         const { license, uuid } =  req.params
-        // console.log(license, uuid);
+        console.log(license, uuid);
 
-        const data = await LicenseModel.findOne({ licenseKey: license }).populate({
-            path: 'gateways.gateway',
-            model: 'gateways',
-        }).populate({
+        const data = await LicenseModel.findOne({ licenseKey: license })
+        .populate({
             path: 'gateways.userInfo',
             model: 'LicenseUserInfo'
-        });
+        }).populate('currentPeriod');
         // console.log(data);
+        console.log(data);
 
         const response = {
             gateways: data.gateways.map(gateway => {
@@ -147,12 +137,119 @@ app.get('/license/:license/:uuid', async (req, res) => {
                     return gateway.gateway
                 }
             }).filter(Boolean),
-            isActive: data.isActive
+            isActive: data.currentPeriod.status === 'active',
+            status: data.currentPeriod.status
         }
         return res.json({ success: true, data: response });
     } catch (err) {
         res.status(500).json({success: false, data: {}, message: err.message });
     }
+});
+
+// Create a new license
+app.post('/licenses', async (req, res) => {
+    try {
+        const { licenseKey, startDate, endDate, ...licenseData } = req.body;
+
+        // Create license first
+        const newLicense = new LicenseModel({
+            licenseKey,
+            ...licenseData
+        });
+
+        // Create initial period
+        const newPeriod = new LicensePeriodModel({
+            license: newLicense._id,
+            startDate,
+            endDate
+        });
+
+        // Save both in transaction
+        await mongoose.connection.transaction(async (session) => {
+            await newLicense.save({ session });
+            await newPeriod.save({ session });
+
+            // Link the period to license
+            newLicense.currentPeriod = newPeriod._id;
+            await newLicense.save({ session });
+        });
+
+        res.status(201).json({
+            success: true,
+            data: await LicenseModel.findById(newLicense._id).populate('currentPeriod')
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+});
+
+// Adding a New Period (Renewal)
+app.post('/licenses/:id/periods', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { startDate, endDate } = req.body;
+        // Deactivate old period
+        await LicensePeriodModel.updateOne(
+            { license: id, status: 'active' },
+            { status: 'expired' }
+        );
+
+        // Create new period
+        const newPeriod = new LicensePeriodModel({
+            license: id,
+            startDate,
+            endDate
+        });
+
+        await newPeriod.save();
+
+        // Update license's current period reference
+        const updatedLicense = await LicenseModel.findByIdAndUpdate(
+            id,
+            { currentPeriod: newPeriod._id },
+            { new: true }
+        ).populate('currentPeriod');
+
+        res.status(201).json({
+            success: true,
+            data: updatedLicense
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+});
+
+// Querying License with Period History
+app.get('/licenses/history/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+        const license = await LicenseModel.findById(id)
+            .populate('currentPeriod');
+
+        const periods = await LicensePeriodModel.find({
+            license: id
+        }).sort({ startDate: -1 });
+
+        res.json({
+            success: true,
+            data: {
+                ...license.toObject(),
+                periodHistory: periods
+            }
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+});
+
+// When handling an incoming request
+app.get('/get-ip', (req, res) => {
+    // Try these headers in order
+    const ip = req.headers['x-forwarded-for'] ||
+               req.headers['x-real-ip'] ||
+               req.ip;
+    console.log('Server public IP as seen by client:', ip);
+    res.json({ ip });
 });
 
 // Start server
