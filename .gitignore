@@ -7,3 +7,4 @@ dist
 */gateway.json
 *.jsc
 build/
+DockerApp/
